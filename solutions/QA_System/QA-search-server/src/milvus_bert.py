@@ -37,6 +37,7 @@ logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(leve
 
 def import_to_pg(table_name,ids,answer):
     conn = pg_operating.connect_postgres_server(PG_HOST, PG_PORT, PG_USER, PG_PASSWORD, PG_DATABASE)
+    
     cur = conn.cursor()
     pg_operating.create_pg_table(conn, cur, table_name)
     pg_operating.record_txt(ids,answer)
@@ -61,6 +62,7 @@ def import_to_milvus(data,collection_name):
     question_vectors = normaliz_vec(vectors.tolist())
     status, ids = milvus.add_vectors(collection_name=collection_name, records=question_vectors)
     print(status)
+    print(ids)
     # index_param = {'index_type': IndexType.IVF_SQ8, 'nlist': nlist}
     # status = milvus.create_index(collection_name,index_param)
     # print(status)
@@ -121,7 +123,7 @@ def import_data(collection_name:str, question:Union[str, list], answer:Union[str
     has_table(collection_name)
     
     ids = import_to_milvus(question_data,collection_name)
-    
+    print(ids)
     import_to_pg(collection_name,ids,answer)
         
 
@@ -156,10 +158,20 @@ def search_in_milvus(collection_name, query_sentence):
     try:
         logging.info("start search in pg ...")
         rows = pg_operating.search_in_pg(conn, cur, results[0][0].id, collection_name)
+        print(rows)
         out_put = rows[0][1]
         return out_put
-    except:
+    except IndexError:
+        # out of range means a vector id in milvus does not exist in postgres,
+        # so it should be dorped from milvus to prevent showing client something 
+        # awkward like "Service disconnect"
+        status = milvus.delete_by_id(collection_name=collection_name, id_array=[results[0][0].id])
+        print(status)
+        return "对不起，我暂时无法为您解答该问题"
+    except Exception as e:
+        print("".join(e.args))
         return "Service disconnect"
+        
     finally:
         if milvus:
             milvus.disconnect()
