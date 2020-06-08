@@ -3,6 +3,7 @@ import time
 import psycopg2
 import numpy as np
 import sys
+from typing import Union
 
 
 def connect_postgres_server(PG_HOST, PG_PORT, PG_USER, PG_PASSWORD, PG_DATABASE):
@@ -68,11 +69,20 @@ def drop_pg_table(conn, cur, PG_TABLE_NAME):
         print("can't drop postgres table")
 
 
-def record_txt(ids,answer_file):
+def record_txt(ids,answer:Union[str, list]):
     fname = 'temp.csv'
     with open(fname,'w') as f:
-        with open(answer_file, 'r') as f_answer:
-            for i in range(len(ids)):
-                line = f_answer.readline()
-                line = str(ids[i]) + "|" + line
+        if isinstance(answer, str):
+            with open(answer, 'r') as f_answer:
+                for i in range(len(ids)):
+                    line = f_answer.readline()
+                    line = str(ids[i]) + "|" + line
+                    f.write(line)
+        
+        elif isinstance(answer,list):
+            for i in answer:
+                line = str(ids[i]) + "|" + i
                 f.write(line)
+
+        else:
+            pass

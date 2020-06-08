@@ -3,7 +3,9 @@ import sys, getopt
 import src.config as config
 
 TOP_K = 1
-
+"""
+python main.py -t milvus_qa --question ../data/finance_question.txt --answer ../data/finance_answer.txt --load
+"""
 
 
 def main():
@@ -21,11 +23,11 @@ def main():
     for opt_name, opt_value in opts:
         
         if opt_name in ("-t", "--collection"):
-            table_name = opt_value
+            table_name = opt_value # milvus_qa
         elif opt_name in ("-q", "--question"):
-            question_dir = opt_value
+            question_dir = opt_value # ../data/finance_question.txt 
         elif opt_name in ("-a", "--answer"):
-            answer_dir = opt_value
+            answer_dir = opt_value # ../data/finance_answer.txt
         elif opt_name in ("-l", "--load"):
             milvus_bert.import_data(table_name, question_dir, answer_dir)
         elif opt_name in("--sentence"):

@@ -8,6 +8,7 @@ import src.config as config
 import logging
 import traceback
 
+from typing import Union
 
 
 milvus = Milvus()
@@ -34,11 +35,11 @@ logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(leve
 
 
 
-def import_to_pg(table_name,ids,answer_file):
+def import_to_pg(table_name,ids,answer):
     conn = pg_operating.connect_postgres_server(PG_HOST, PG_PORT, PG_USER, PG_PASSWORD, PG_DATABASE)
     cur = conn.cursor()
     pg_operating.create_pg_table(conn, cur, table_name)
-    pg_operating.record_txt(ids,answer_file)
+    pg_operating.record_txt(ids,answer)
     pg_operating.copy_data_to_pg(conn, cur, table_name)
     pg_operating.build_pg_index(conn, cur, table_name)
 
@@ -106,13 +107,22 @@ def read_data(file_dir):
     return data
 
 
+def import_data(collection_name:str, question:Union[str, list], answer:Union[str, list]):
+    
+    if isinstance(question, list):
+        question_data = question
+    elif isinstance(question, str):
+        question_data = read_data(question)
+    else:
+        raise Exception(f"questions should be either a list or a file path, but got {type(question)}")
 
-def import_data(collection_name, question_dir, answer_dir):
-    question_data = read_data(question_dir)
     connect_milvus_server()
+    
     has_table(collection_name)
+    
     ids = import_to_milvus(question_data,collection_name)
-    import_to_pg(collection_name,ids,answer_dir)
+    
+    import_to_pg(collection_name,ids,answer)
         
 
 def search_in_milvus(collection_name, query_sentence):

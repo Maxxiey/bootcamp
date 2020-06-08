@@ -19,7 +19,7 @@ from src.const import UPLOAD_PATH
 import src.config as config
 
 # import servive.milvus_toolkit as milvus_toolkit
-from src.milvus_bert import search_in_milvus
+from src.milvus_bert import search_in_milvus, import_data
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_PATH
@@ -51,7 +51,28 @@ def do_search_api():
             return "Error with {}".format(e)
     return "not found", 400
 
+@app.route("/api/v1/add", methods=['POST'])
+def do_add_api():
+    data = request.json
 
+    question = data['question']
+    if isinstance(question,str):
+        question = [question]
+
+    answer = data['answer']
+    if isinstance(answer,str):
+        answer = [answer]
+    
+    table_name = data.get("table_name", None)
+    if not table_name:
+        table_name = config.DEFAULT_TABLE
+
+    assert len(question) == len(answer), \
+        f'length of queries and answers must be the same, but got querise {len(question)} and answers {len(answer)}'
+    
+    import_data(table_name, question, answer)
+
+    return "data added", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
